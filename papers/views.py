@@ -1,4 +1,4 @@
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
 from .models import Essay
 from .pagination import fetch
 from .data_loader import load_essays_into_db, load_edges_into_db
@@ -32,34 +32,54 @@ def load_data(request):
 @csrf_exempt
 def user_login(request):
     """
-    用户登录，验证 email 和 password 的正确性
+    用户登录，验证 email 和 password
     """
     if request.method == "POST":
-        data = json.loads(request.body)
-        email = data.get("email")
-        password = data.get("password")
-        user = authenticate(username=email, password=password)
-        if user:
-            return JsonResponse({"message": "Login successful", "user_id": user.id, "role": user.identity})
-        else:
-            return JsonResponse({"error": "Invalid email or password"}, status=401)
+        try:
+            # 尝试从查询参数获取
+            name = request.GET.get("email")
+            password = request.GET.get("password")
+
+            # 如果查询参数为空，尝试解析 JSON 请求体
+            if not name or not password:
+                data = json.loads(request.body)
+                name = data.get("email")
+                password = data.get("password")
+
+            print(f"Authenticating user with email: {name} and password: {password}")
+            # 验证用户
+            user = authenticate(username=name, password=password)
+            if user:
+                # return HttpResponseRedirect('/api/search')
+                return JsonResponse({"message": "Login successful", "user_id": user.id, "role": user.identity})
+            else:
+                return JsonResponse({"error": "Invalid email or password"}, status=401)
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid request format"}, status=400)
     return JsonResponse({"error": "Method not allowed"}, status=405)
+
 
 @csrf_exempt
 def user_register(request):
     """
     用户注册
     """
+    if request.method == "OPTIONS":
+        response = JsonResponse({"message": "Options request successful"})
+        response["Allow"] = "POST, OPTIONS"
+        return response
+
     if request.method == "POST":
         data = json.loads(request.body)
-        name = data.get("name")
-        email = data.get("email")
+        name = data.get("email")
+        nickname = data.get("nickname")
         password = data.get("password")
-        if User.objects.filter(email=email).exists():
+        if User.objects.filter(username=name).exists():
             return JsonResponse({"error": "Email already exists"}, status=400)
-        user = User.objects.create_user(username=name, email=email, password=password)
+        user = User.objects.create_user(username=name, nickname=nickname, password=password)
         return JsonResponse({"message": "Registration successful", "user_id": user.id})
     return JsonResponse({"error": "Method not allowed"}, status=405)
+
 
 def user_info(request):
     """

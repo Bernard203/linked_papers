@@ -102,7 +102,10 @@ class Essay(models.Model):
         return [essay for essay, _ in similarities[:top_n]]
 
 class User(AbstractUser):
-    email = models.EmailField(unique=True)
+    # email = models.EmailField(unique=True)
+    nickname = models.CharField(max_length=50, blank=True, null=True)
+    identity = models.CharField(max_length=255, blank=True, null=True)
+
 
     def save(self, *args, **kwargs):
         if not self.password.startswith('pbkdf2_'):  # 避免重复加密
