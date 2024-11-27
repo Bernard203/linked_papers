@@ -50,8 +50,8 @@ def user_login(request):
             # 验证用户
             user = authenticate(username=name, password=password)
             if user:
-                # return HttpResponseRedirect('/api/search')
-                return JsonResponse({"message": "Login successful", "user_id": user.id, "role": user.identity})
+                return HttpResponseRedirect('/api/home')
+                # return JsonResponse({"message": "Login successful", "user_id": user.id, "role": user.identity})
             else:
                 return JsonResponse({"error": "Invalid email or password"}, status=401)
         except json.JSONDecodeError:
@@ -107,6 +107,12 @@ def user_update(request):
         except User.DoesNotExist:
             return JsonResponse({"error": "User not found"}, status=404)
     return JsonResponse({"error": "Method not allowed"}, status=405)
+
+def search(request):
+    """
+    分页检索论文
+    """
+    return JsonResponse({"message": "Search successful"})
 
 def search_by_keyword(request, keyword, page):
     """
