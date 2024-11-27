@@ -50,7 +50,8 @@ def user_login(request):
             # 验证用户
             user = authenticate(username=name, password=password)
             if user:
-                return HttpResponseRedirect('/api/home')
+                return JsonResponse({"message": "Login successful", "user_id": user.id, "redirect_url": "/api/home"})
+                # return HttpResponseRedirect('/api/home')
                 # return JsonResponse({"message": "Login successful", "user_id": user.id, "role": user.identity})
             else:
                 return JsonResponse({"error": "Invalid email or password"}, status=401)

@@ -131,4 +131,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'papers.User'
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # 替换为前端的域名
+]
+
 CORS_ALLOW_ALL_ORIGINS = True
