@@ -1,3 +1,4 @@
+from django.forms import model_to_dict
 from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
 from .models import Essay
 from .pagination import fetch
@@ -50,7 +51,7 @@ def user_login(request):
             # 验证用户
             user = authenticate(username=name, password=password)
             if user:
-                return JsonResponse({"message": "Login successful", "user_id": user.id, "redirect_url": "/api/home"})
+                return JsonResponse({"message": "Login successful", "result": model_to_dict(user), "redirect_url": "/api/home"})
                 # return HttpResponseRedirect('/api/home')
                 # return JsonResponse({"message": "Login successful", "user_id": user.id, "role": user.identity})
             else:
@@ -121,6 +122,7 @@ def search_by_keyword(request, keyword, page):
     """
     data = fetch(essayId=None, keyword=keyword, page=page, per_page=16)  # 调用分页功能
     return JsonResponse(data)
+    # return JsonResponse("Hello World!")
 
 def get_paper_detail(request, paperId):
     """
