@@ -1,4 +1,9 @@
+from datetime import timedelta, datetime
+
+import jwt
 from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
+
+from linked_papers.settings import SECRET_KEY
 from .models import Essay
 from .pagination import fetch
 from .data_loader import load_essays_into_db, load_edges_into_db
@@ -50,7 +55,21 @@ def user_login(request):
             # 验证用户
             user = authenticate(username=name, password=password)
             if user:
-                return JsonResponse({"message": "Login successful", "user_id": user.id, "redirect_url": "/api/home"})
+                payload = {
+                    "user_id": user.id,
+                    "exp": datetime.utcnow() + timedelta(hours=24),  # 24 小时有效期
+                    "iat": datetime.utcnow(),
+                }
+                token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+                return JsonResponse({
+                    "message": "Login successful",
+                    "result": {
+                        "token": token,
+                        "name": user.username,
+                        "role": user.role
+                    }
+                })
+                # return JsonResponse({"message": "Login successful", "user_id": user.id, "redirect_url": "/api/home"})
                 # return HttpResponseRedirect('/api/home')
                 # return JsonResponse({"message": "Login successful", "user_id": user.id, "role": user.identity})
             else:
@@ -77,7 +96,7 @@ def user_register(request):
         password = data.get("password")
         if User.objects.filter(username=name).exists():
             return JsonResponse({"error": "Email already exists"}, status=400)
-        user = User.objects.create_user(username=name, nickname=nickname, password=password)
+        user = User.objects.create_user(username=name, nickname=nickname, password=password, role = "USER")
         return JsonResponse({"message": "Registration successful", "user_id": user.id})
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
