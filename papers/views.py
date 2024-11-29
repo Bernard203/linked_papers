@@ -134,12 +134,15 @@ def search(request):
     """
     return JsonResponse({"message": "Search successful"})
 
+@csrf_exempt
 def search_by_keyword(request, keyword, page):
-    """
-    根据关键词分页检索论文
-    """
-    data = fetch(essayId=None, keyword=keyword, page=page, per_page=16)  # 调用分页功能
-    return JsonResponse(data)
+    if request.method == "GET":
+        """
+        根据关键词分页检索论文
+        """
+        data = fetch(essayId=None, keyword=keyword, page=page, per_page=16)  # 调用分页功能
+        return JsonResponse(data)
+    return JsonResponse("Hello World!")
 
 def get_paper_detail(request, paperId):
     """

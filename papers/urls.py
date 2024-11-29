@@ -6,7 +6,7 @@ from .views import load_data, user_login, user_register, user_info, user_update,
 urlpatterns = [
     path('train-model', views.train_model, name='train_model'),
     path('classify-test', views.classify_test_set, name='classify_test_set'),
-    path('load-data', load_data, name='load_data'),
+    path('load-dataset', load_data, name='load_data'),
 
     # 用户相关
     path("users/login", user_login, name="user_login"),
