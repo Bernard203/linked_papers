@@ -4,7 +4,7 @@ from django.db import connection
 from papers.data_loader import load_essays_into_db, load_edges_into_db
 
 class Command(BaseCommand):
-    help = "Load papers and citation data into the database"
+    help = "Load papers and citation dataset into the database"
 
     def handle(self, *args, **kwargs):
         # # Papers
