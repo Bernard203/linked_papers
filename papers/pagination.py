@@ -27,7 +27,8 @@ def fetch(essayId, keyword, page, per_page=16):
         return {
             'essays': [{'id': essay.id, 'title': essay.title, 'year': essay.year} for essay in paginated_essays],
             'current_page': paginated_essays.number,
-            'total_pages': paginator.num_pages
+            'total_pages': paginator.num_pages,
+            'total_items': paginator.count
         }
     except Essay.DoesNotExist:
         return {'error': f'Essay with id {essayId} does not exist'}

@@ -105,6 +105,7 @@ class User(AbstractUser):
     # email = models.EmailField(unique=True)
     nickname = models.CharField(max_length=50, blank=True, null=True)
     identity = models.CharField(max_length=255, blank=True, null=True)
+    role = models.CharField(max_length=255, blank=True, null=True)
 
 
     def save(self, *args, **kwargs):
