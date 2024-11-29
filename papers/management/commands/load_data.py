@@ -8,12 +8,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         # # Papers
-        # self.stdout.write(self.style.SUCCESS("Loading papers into the database..."))
-        # try:
-        #     load_essays_into_db()
-        #     self.stdout.write(self.style.SUCCESS("Papers loaded successfully!"))
-        # except Exception as e:
-        #     self.stdout.write(self.style.ERROR(f"Error loading papers: {e}"))
+        self.stdout.write(self.style.SUCCESS("Loading papers into the database..."))
+        try:
+            load_essays_into_db()
+            self.stdout.write(self.style.SUCCESS("Papers loaded successfully!"))
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"Error loading papers: {e}"))
 
         # Edges
         with connection.cursor() as cursor:
