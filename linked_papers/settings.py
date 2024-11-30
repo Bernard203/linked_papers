@@ -44,7 +44,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    # 'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -130,6 +130,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'papers.User'
+AUTH_ANONYMOUS_USER = 'papers.User'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # 替换为前端的域名
@@ -138,3 +139,9 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_METHODS = ['GET', 'POST', 'OPTIONS']
 CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization', 'X-Requested-With', 'token']
+
+# 默认情况下，Django 已启用 session，本应无需特别配置，但先试试
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # 使用数据库存储会话信息
+SESSION_COOKIE_NAME = 'sessionid'  # Cookie 中存储会话 ID 的名称
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # 设置为 True 时，关闭浏览器会清除 session
+

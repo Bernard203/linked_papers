@@ -5,6 +5,7 @@ from sklearn.metrics import accuracy_score
 from django.core.paginator import Paginator
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth.models import AnonymousUser
 import pickle
 import os
 
@@ -112,6 +113,11 @@ class User(AbstractUser):
         if not self.password.startswith('pbkdf2_'):  # 避免重复加密
             self.password = make_password(self.password)
         super().save(*args, **kwargs)
+
+# class CustomAnonymousUser(AnonymousUser):
+#     nickname = None
+#     identity = None
+#     role = None
 
 class Edge(models.Model):
     essay = models.ForeignKey(Essay, related_name='citing', on_delete=models.CASCADE)

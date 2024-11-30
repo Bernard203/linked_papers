@@ -5,12 +5,13 @@ from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
 
 from linked_papers.settings import SECRET_KEY
 from .models import Essay
+from .models import Edge
 from .pagination import fetch
 from .data_loader import load_essays_into_db, load_edges_into_db
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import User
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, login
 import json
 
 def train_model(request):
@@ -51,10 +52,19 @@ def user_login(request):
                 name = data.get("email")
                 password = data.get("password")
 
-            print(f"Authenticating user with email: {name} and password: {password}")
             # 验证用户
             user = authenticate(username=name, password=password)
+            # print(f"Authenticating user with email: {name} and password: {password}, user: {user}")
+            # print("User is authenticated: ", user.is_authenticated)
             if user:
+                # print(user.nickname)
+                # request.user.username = user.nickname
+                # request.user.email = user.username
+                # request.user.password = user.role
+                login(request, user)
+
+                # print(request.user.email)
+                request.session.set_expiry(0)
                 payload = {
                     "user_id": user.id,
                     "exp": datetime.utcnow() + timedelta(hours=24),  # 24 小时有效期
@@ -66,6 +76,7 @@ def user_login(request):
                     "result": {
                         "token": token,
                         "name": user.username,
+                        "nickname": user.nickname,
                         "role": user.role
                     }
                 })
@@ -100,14 +111,28 @@ def user_register(request):
         return JsonResponse({"message": "Registration successful", "user_id": user.id})
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
-
+# @csrf_exempt
 def user_info(request):
     """
-    获取用户列表
+    获取用户, 暂时弃用
     """
     if request.method == "GET":
-        users = User.objects.all().values("id", "username", "email", "identity")
-        return JsonResponse(list(users), safe=False)
+        print(request)
+        user = request.user
+        print("User: ", user)
+        print("User is authenticated: ", user.is_authenticated)
+        # print(user.nickname)
+        if user:
+            return JsonResponse({
+                # "user_id": user.id,
+                # "username": user.email,
+                "nickname": user.username,
+                # "role": user.password
+            })
+        else:
+            return JsonResponse({"error": "User not authenticated"}, status=401)
+        # users = User.objects.all().values("role", "username", "nickname", "identity")
+        # return JsonResponse(list(users), safe=False)
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
 @csrf_exempt
@@ -117,11 +142,14 @@ def user_update(request):
     """
     if request.method == "POST":
         data = json.loads(request.body)
-        user_id = data.get("user_id")
+        token = data.get("token")
+        # print("token!! ", token)
         role = data.get("role")
         try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+            user_id = payload.get("user_id")
             user = User.objects.get(id=user_id)
-            user.identity = role
+            user.role = role
             user.save()
             return JsonResponse({"message": "User role updated successfully"})
         except User.DoesNotExist:
@@ -180,13 +208,23 @@ def get_related_papers(request, paperId):
         return JsonResponse({"error": "Paper not found"}, status=404)
 
 def get_cited_papers(request, paperId):
+    # for k in Edge.objects.all().values():
+    #     print(k)
     """
     获取引用论文
     """
     try:
-        paper = Essay.objects.get(id=paperId)
-        cited_papers = paper.cited_by.all()  # 假设 `cited_by` 是 Edge 模型中定义的 related_name
-        data = [{"id": cited.id, "title": cited.title} for cited in cited_papers]
+        # 获取引用关系
+        cited_edges = Edge.objects.filter(essay_id=paperId)
+        # print("cited_edges: ", cited_edges)
+        cited_paper_ids = [edge.cited_id for edge in cited_edges]
+        print("cited_paper_ids: ", cited_paper_ids)
+
+        # 获取被引用论文的信息
+        cited_papers = Essay.objects.filter(id__in=cited_paper_ids)
+        # print("cited_papers1: ", cited_papers)
+        data = [{"id": paper.id, "title": paper.title, "abstract": paper.abstract, "year": paper.year, "category": paper.category} for paper in cited_papers]
+
         return JsonResponse(data, safe=False)
     except Essay.DoesNotExist:
         return JsonResponse({"error": "Paper not found"}, status=404)
