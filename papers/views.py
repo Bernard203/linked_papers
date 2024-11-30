@@ -57,7 +57,7 @@ def user_login(request):
             # print(f"Authenticating user with email: {name} and password: {password}, user: {user}")
             # print("User is authenticated: ", user.is_authenticated)
             if user:
-                # print(user.nickname)
+                print("NICKNAME", user.nickname)
                 # request.user.username = user.nickname
                 # request.user.email = user.username
                 # request.user.password = user.role
@@ -103,12 +103,12 @@ def user_register(request):
     if request.method == "POST":
         data = json.loads(request.body)
         name = data.get("email")
-        nickname = data.get("nickname")
+        nickname = data.get("name")
         password = data.get("password")
         if User.objects.filter(username=name).exists():
             return JsonResponse({"error": "Email already exists"}, status=400)
         user = User.objects.create_user(username=name, nickname=nickname, password=password, role = "USER")
-        return JsonResponse({"message": "Registration successful", "user_id": user.id})
+        return JsonResponse({"message": "Registration successful"})
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
 # @csrf_exempt
@@ -143,13 +143,12 @@ def user_update(request):
     if request.method == "POST":
         data = json.loads(request.body)
         token = data.get("token")
-        # print("token!! ", token)
-        role = data.get("role")
+        print("token!! ", token)
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
             user_id = payload.get("user_id")
             user = User.objects.get(id=user_id)
-            user.role = role
+            user.role = "VIP"
             user.save()
             return JsonResponse({"message": "User role updated successfully"})
         except User.DoesNotExist:

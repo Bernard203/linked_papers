@@ -130,7 +130,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'papers.User'
-AUTH_ANONYMOUS_USER = 'papers.User'
+# AUTH_ANONYMOUS_USER = 'papers.User'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # 替换为前端的域名
