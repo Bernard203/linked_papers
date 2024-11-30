@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from pathlib import Path
+from tqdm import tqdm
 
 from django.db import transaction, connection
 
@@ -48,7 +49,7 @@ def load_essays_into_db():
         raise ValueError("The number of papers and features do not match!")
 
     essays = []
-    for index, row in papers_df.iterrows():
+    for index, row in tqdm(papers_df.iterrows(), total=len(papers_df), desc="Loading papers"):
         essays.append(
             Essay(
                 title=row['title'],
@@ -82,8 +83,8 @@ def load_edges_into_db():
     #     return ValueError(f"Invalid essay IDs found: citing - {invalid_citing_ids}, cited - {invalid_cited_ids}")
 
     edge_objects = []
-    for essay_id, cited_id in zip(citing, cited):
-        print("essay_id:", essay_id, "cited_id:", cited_id)
+    for essay_id, cited_id in tqdm(zip(citing, cited), total=len(citing), desc="Loading edges"):
+        # print("essay_id:", essay_id, "cited_id:", cited_id)
         edge_objects.append(
             Edge(essay_id=essay_id, cited_id=cited_id)
         )
