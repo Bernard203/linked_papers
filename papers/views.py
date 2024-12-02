@@ -102,12 +102,12 @@ def user_register(request):
 
     if request.method == "POST":
         data = json.loads(request.body)
-        name = data.get("email")
-        nickname = data.get("name")
+        name = data.get("name")
+        email = data.get("email")
         password = data.get("password")
-        if User.objects.filter(username=name).exists():
+        if User.objects.filter(email=email).exists():
             return JsonResponse({"error": "Email already exists"}, status=400)
-        user = User.objects.create_user(username=name, nickname=nickname, password=password, role = "USER")
+        user = User.objects.create_user(username=name, email=email, password=password, role = "USER")
         return JsonResponse({"message": "Registration successful"})
     return JsonResponse({"error": "Method not allowed"}, status=405)
 

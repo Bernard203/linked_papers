@@ -7,7 +7,7 @@ class Command(BaseCommand):
     help = "Load papers and citation dataset into the database"
 
     def handle(self, *args, **kwargs):
-        # # Papers
+        # Papers
         self.stdout.write(self.style.SUCCESS("Loading papers into the database..."))
         try:
             load_essays_into_db()

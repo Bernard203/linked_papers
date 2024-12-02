@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from tqdm import tqdm
 
 from django.db import transaction, connection
 
@@ -36,6 +35,21 @@ def load_edges():
         _edges_cache = edges[0], edges[1]
     return _edges_cache
 
+def save_papers_to_db():
+    """将论文数据保存到数据库"""
+    papers = load_papers()  # 从 papers.csv.gz 加载数据
+    features = load_features()  # 从 feats.csv.gz 加载特征向量
+
+    # 遍历论文数据，逐条保存到数据库
+    for i, row in papers.iterrows():
+        Essay.objects.create(
+            title=row['title'],
+            abstract=row['abstract'],
+            year=row['year'],
+            category=row.get('category', None),  # 有些可能没有分类标签
+            feature_vector=features[i].tobytes()  # 将特征向量转换为二进制格式
+        )
+
 @transaction.atomic
 def load_essays_into_db():
     """
@@ -49,7 +63,7 @@ def load_essays_into_db():
         raise ValueError("The number of papers and features do not match!")
 
     essays = []
-    for index, row in tqdm(papers_df.iterrows(), total=len(papers_df), desc="Loading papers"):
+    for index, row in papers_df.iterrows():
         essays.append(
             Essay(
                 title=row['title'],
@@ -72,19 +86,18 @@ def load_edges_into_db():
     edges = load_edges()  # 加载引用数据
     citing, cited = edges
 
-    if len(citing) != len(cited):
-        raise ValueError("referring and referred papers do not match!")
-
-    # 检查所有引用的论文是否存在
+    # if len(citing) != len(cited):
+    #     raise ValueError("referring and referred papers do not match!")
+    #
+    # # 检查所有引用的论文是否存在
     # invalid_citing_ids = [essay_id for essay_id in citing if not Essay.objects.filter(id=essay_id).exists()]
     # invalid_cited_ids = [essay_id for essay_id in cited if not Essay.objects.filter(id=essay_id).exists()]
-
+    #
     # if invalid_citing_ids or invalid_cited_ids:
     #     return ValueError(f"Invalid essay IDs found: citing - {invalid_citing_ids}, cited - {invalid_cited_ids}")
 
     edge_objects = []
-    for essay_id, cited_id in tqdm(zip(citing, cited), total=len(citing), desc="Loading edges"):
-        # print("essay_id:", essay_id, "cited_id:", cited_id)
+    for essay_id, cited_id in zip(citing, cited):
         edge_objects.append(
             Edge(essay_id=essay_id, cited_id=cited_id)
         )
