@@ -84,11 +84,11 @@ def load_edges_into_db():
     将引用关系加载到数据库中
     """
     edges = load_edges()  # 加载引用数据
-    citing, cited = edges
+    src, dst = edges
 
-    # if len(citing) != len(cited):
-    #     raise ValueError("referring and referred papers do not match!")
-    #
+    if len(src) != len(dst):
+        raise ValueError("The number of source and destination nodes do not match!")
+
     # # 检查所有引用的论文是否存在
     # invalid_citing_ids = [essay_id for essay_id in citing if not Essay.objects.filter(id=essay_id).exists()]
     # invalid_cited_ids = [essay_id for essay_id in cited if not Essay.objects.filter(id=essay_id).exists()]
@@ -97,7 +97,7 @@ def load_edges_into_db():
     #     return ValueError(f"Invalid essay IDs found: citing - {invalid_citing_ids}, cited - {invalid_cited_ids}")
 
     edge_objects = []
-    for essay_id, cited_id in zip(citing, cited):
+    for essay_id, cited_id in zip(src, dst):
         edge_objects.append(
             Edge(essay_id=essay_id, cited_id=cited_id)
         )
