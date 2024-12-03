@@ -1,4 +1,5 @@
 import scipy.sparse as sp
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.utils import shuffle
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
@@ -10,6 +11,8 @@ import numpy as np
 
 from ..data_loader import load_features, load_edges, load_papers
 from tqdm import tqdm
+
+from ..models import Essay
 
 
 def process_data():
@@ -52,7 +55,7 @@ def process_data():
 
     # Split data
     # X_train, X_val, X_test = X[idx_train], X[idx_val], X[idx_test]
-    Y_train, Y_val, Y_test = Y[idx_train], Y[idx_val], Y[idx_test]
+    Y_train, Y_val= Y[idx_train], Y[idx_val]
 
     # Step 1: Compute the degree matrix D
     D = sp.diags(np.array(A.sum(axis=1)).flatten(), dtype=np.float32)
@@ -68,10 +71,10 @@ def process_data():
     X_enhanced_train, X_enhanced_val, X_enhanced_test = X_enhanced[idx_train], X_enhanced[idx_val], X_enhanced[idx_test]
 
     print("Data processed!")
-    return X_enhanced_train, X_enhanced_val, X_enhanced_test, Y_train, Y_val, Y_test
+    return X_enhanced_train, X_enhanced_val, X_enhanced_test, Y_train, Y_val, idx_test, label_encoder
 
 
-def train_svm(x_train, y_train, x_val, y_val, n_splits=6):
+def train_ensemble(x_train, y_train, x_val, y_val, n_splits=6):
     """
     训练 SVM 分类器
     """
@@ -80,20 +83,37 @@ def train_svm(x_train, y_train, x_val, y_val, n_splits=6):
     x_train_scaled = scaler.fit_transform(x_train)
     x_train_splits = np.array_split(x_train_scaled, n_splits)
     y_train_splits = np.array_split(y_train, n_splits)
-    models = []
-    for i in tqdm(range(n_splits)):
-        clf = SVC(kernel='rbf', gamma='auto', random_state=42)
-        clf.fit(x_train_splits[i], y_train_splits[i])
-        models.append(clf)
-    print("Testing SVM classifier...")
-    acc = 0
+    svm_models = []
+    dt_models = []
+    vote_models = []
 
+    for i in tqdm(range(n_splits)):
+        clf = SVC(kernel='rbf', probability=True, random_state=42)
+        clf.fit(x_train_splits[i], y_train_splits[i])
+        svm_models.append(clf)
+
+        dt_clf = DecisionTreeClassifier(random_state=42)
+        dt_clf.fit(x_train_splits[i], y_train_splits[i])
+        dt_models.append(dt_clf)
+
+        voting_clf = VotingClassifier(estimators=[('svm', clf), ('dt', dt_clf)], voting='soft')
+        voting_clf.fit(x_train_splits[i], y_train_splits[i])
+        vote_models.append(voting_clf)
+
+    print("Testing classifier...")
+    acc = 0
     x_val = scaler.transform(x_val)
+
     for i,(x, y) in tqdm(enumerate(zip(x_val, y_val))):
         x = x.reshape(1, -1)
         y_pred = []
-        for model in models:
-            y_pred.append(model.predict(x)[0])
+        for svm_model, dt_model, vote_model in zip(svm_models, dt_models, vote_models):
+            svm_pred = svm_model.predict(x)[0]
+            dt_pred = dt_model.predict(x)[0]
+            vt_pred = vote_model.predict(x)[0]
+            y_pred.append(svm_pred)
+            y_pred.append(dt_pred)
+            y_pred.append(vt_pred)
         y_pred = np.array(y_pred)
         y_pred = np.argmax(np.bincount(y_pred))
         if y_pred == y:
@@ -103,7 +123,9 @@ def train_svm(x_train, y_train, x_val, y_val, n_splits=6):
     acc /= len(y_val)
     print(f"Validation Accuracy: {acc:.4f}")
 
-    return models
+    # voting_clf = VotingClassifier(estimators=[('svm', svm_models), ('dt', dt_models)], voting='soft')
+
+    return svm_models, dt_models, vote_models
 
 
 def evaluate_svm(clf, x_test, y_test):
@@ -120,8 +142,27 @@ def classify(n_splits=6):
     """
     训练和评估 SVM 分类器
     """
-    x_train, x_val, x_test, y_train, y_val, y_test = process_data()
+    x_train, x_val, x_test, y_train, y_val, y_test, le = process_data()
     x_train, y_train = shuffle(x_train, y_train, random_state=42)
     x_val, y_val = shuffle(x_val, y_val, random_state=42)
     print("Training SVM classifier...")
-    train_svm(x_train, y_train, x_val, y_val)
+    # train_ensemble(x_train, y_train, x_val, y_val)
+    svm_models, dt_models, vote_models = train_ensemble(x_train, y_train, x_val, y_val, n_splits=n_splits)
+
+    essays = Essay.objects.filter(id__in=y_test)
+
+    for essay in essays:
+        feature_vector = np.frombuffer(essay.feature_vector, dtype=np.float32).reshape(1, -1)
+        y_pred = []
+        for svm_model, dt_model, vote_model in zip(svm_models, dt_models, vote_models):
+            svm_pred = svm_model.predict([feature_vector])[0]
+            dt_pred = dt_model.predict([feature_vector])[0]
+            vt_pred = vote_model.predict([feature_vector])[0]
+            y_pred.append(svm_pred)
+            y_pred.append(dt_pred)
+            y_pred.append(vt_pred)
+        y_pred = np.array(y_pred)
+        y_pred = np.argmax(np.bincount(y_pred))
+        original_labels = le.inverse_transform(y_pred)
+        essay.category = original_labels
+        essay.save()
