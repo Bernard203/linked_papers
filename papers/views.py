@@ -200,7 +200,7 @@ def get_related_papers(request, paperId):
     """
     try:
         target_paper = Essay.objects.get(id=paperId)
-        related_papers = Essay.objects.filter(category=target_paper.category).exclude(id=paperId)[:5]
+        related_papers = Essay.objects.filter(category=target_paper.category).exclude(id=paperId)[:10]
         data = [{"id": paper.id, "title": paper.title} for paper in related_papers]
         return JsonResponse(data, safe=False)
     except Essay.DoesNotExist:
