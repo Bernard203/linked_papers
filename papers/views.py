@@ -167,7 +167,7 @@ def search_by_keyword(request, keyword, page):
         """
         根据关键词分页检索论文
         """
-        data = fetch(essayId=None, keyword=keyword, page=page, per_page=16)  # 调用分页功能
+        data = fetch(keyword=keyword, page=page)  # 调用分页功能
         return JsonResponse(data)
     return JsonResponse("Hello World!")
 
@@ -191,20 +191,22 @@ def get_similar_papers(request, paperId, page):
     """
     根据论文 ID 获取同类论文
     """
-    data = fetch(essayId=paperId, keyword=None, page=page)
+    data = fetch(target_class=paperId, page=page)
     return JsonResponse(data)
 
 def get_related_papers(request, paperId):
     """
     获取相关论文（可以根据某种逻辑实现）
     """
-    try:
-        target_paper = Essay.objects.get(id=paperId)
-        related_papers = Essay.objects.filter(category=target_paper.category).exclude(id=paperId)[:5]
-        data = [{"id": paper.id, "title": paper.title} for paper in related_papers]
-        return JsonResponse(data, safe=False)
-    except Essay.DoesNotExist:
-        return JsonResponse({"error": "Paper not found"}, status=404)
+    data = fetch(target_cluster=paperId, page=1)
+    return JsonResponse(data)
+    # try:
+    #     target_paper = Essay.objects.get(id=paperId)
+    #     related_papers = Essay.objects.filter(category=target_paper.category).exclude(id=paperId)[:10]
+    #     data = [{"id": paper.id, "title": paper.title} for paper in related_papers]
+    #     return JsonResponse(data, safe=False)
+    # except Essay.DoesNotExist:
+    #     return JsonResponse({"error": "Paper not found"}, status=404)
 
 def get_cited_papers(request, paperId):
     # for k in Edge.objects.all().values():

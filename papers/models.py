@@ -16,6 +16,7 @@ class Essay(models.Model):
     year = models.IntegerField()
     category = models.CharField(max_length=100, null=True, blank=True)  # 论文标签
     feature_vector = models.BinaryField()  # 存储128维特征向量的二进制格式
+    cluster_label = models.IntegerField(null=True, blank=True)
 
     @staticmethod
     def load_feature_vectors():
