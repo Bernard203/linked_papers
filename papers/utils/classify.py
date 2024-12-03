@@ -76,9 +76,9 @@ def train_svm(x_train, y_train, x_val, y_val, n_splits=6):
     训练 SVM 分类器
     """
     # print("Standardizing features...")
-    # scaler = StandardScaler()
-    # x_train_scaled = scaler.fit_transform(x_train)
-    x_train_splits = np.array_split(x_train, n_splits)
+    scaler = StandardScaler()
+    x_train_scaled = scaler.fit_transform(x_train)
+    x_train_splits = np.array_split(x_train_scaled, n_splits)
     y_train_splits = np.array_split(y_train, n_splits)
     models = []
     for i in tqdm(range(n_splits)):
@@ -88,7 +88,7 @@ def train_svm(x_train, y_train, x_val, y_val, n_splits=6):
     print("Testing SVM classifier...")
     acc = 0
 
-    # x_val = scaler.transform(x_val)
+    x_val = scaler.transform(x_val)
     for i,(x, y) in tqdm(enumerate(zip(x_val, y_val))):
         x = x.reshape(1, -1)
         y_pred = []
